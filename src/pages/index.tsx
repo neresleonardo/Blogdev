@@ -4,6 +4,7 @@ import { getPrismicClient } from '../services/prismic';
 import Prismic from '@prismicio/client';
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
+import Header from '../components/Header';
 
 interface Post {
   uid?: string;
@@ -32,7 +33,7 @@ interface HomeProps {
       </Head>
 
       <main>
-        <h1>Ola</h1>
+        <Header />
       </main>
       </>
     )
