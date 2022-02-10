@@ -2,9 +2,11 @@ import { GetStaticProps } from 'next';
 import Head from 'next/head'
 import { getPrismicClient } from '../services/prismic';
 import Prismic from '@prismicio/client';
-import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
-import Header from '../components/Header';
+import Link from 'next/link';
+
+// Icons
+import { FiCalendar, FiUser } from 'react-icons/fi';
 
 interface Post {
   uid?: string;
@@ -25,15 +27,72 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
- export default function Home() {
+ export default function Home({posts}: PostPagination) {
     return (
       <>
        <Head>
         <title>Inicio | Dev Blog</title>
       </Head>
 
-      <main>
-        <Header />
+      <main className={styles.container}>
+            <div className={styles.posts}>
+                  <Link  href='/'>
+                    <a>
+                      <strong>Desenvolvendo uma web acessível</strong>
+                      <p>Protocolos e diretrizes orientam o desenvolvimento de tecnologias acessíveis, mas é preciso olhar para além de tudo isso</p>
+                      <div className={styles.infoContainer}>
+                      <div>
+                            <FiCalendar />
+                            <time>
+                              12/23/1212
+                            </time>
+                          </div>
+                          <div>
+                            <FiUser />
+                            <span>Leonardo Borges</span>
+                          </div>
+                      </div>
+                    </a>
+                  </Link>
+
+                  <Link  href='/'>
+                    <a>
+                      <strong>Desenvolvendo uma web acessível</strong>
+                      <p>Protocolos e diretrizes orientam o desenvolvimento de tecnologias acessíveis, mas é preciso olhar para além de tudo isso</p>
+                      <div className={styles.infoContainer}>
+                      <div>
+                            <FiCalendar />
+                            <time>
+                              12/23/1212
+                            </time>
+                          </div>
+                          <div>
+                            <FiUser />
+                            <span>Leonardo Borges</span>
+                          </div>
+                      </div>
+                    </a>
+                  </Link>
+
+                  <Link  href='/'>
+                    <a>
+                      <strong>Titulo</strong>
+                      <p>subtitle</p>
+                      <div className={styles.infoContainer}>
+                      <div>
+                            <FiCalendar />
+                            <time>
+                              12/23/1212
+                            </time>
+                          </div>
+                          <div>
+                            <FiUser />
+                            <span>Leonardo Borges</span>
+                          </div>
+                      </div>
+                    </a>
+                  </Link>
+            </div>
       </main>
       </>
     )
