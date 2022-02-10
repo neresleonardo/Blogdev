@@ -1,12 +1,21 @@
+import { useEffect, useState } from 'react';
 import { GetStaticProps } from 'next';
-import Head from 'next/head'
-import { getPrismicClient } from '../services/prismic';
-import Prismic from '@prismicio/client';
-import styles from './home.module.scss';
+import Head from 'next/head';
 import Link from 'next/link';
+import Prismic from '@prismicio/client';
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+
 
 // Icons
 import { FiCalendar, FiUser } from 'react-icons/fi';
+
+// Styles
+import commonStyles from 'styles/common.module.scss';
+import styles from './home.module.scss';
+
+// Services
+import { getPrismicClient } from '../services/prismic';
 
 interface Post {
   uid?: string;
@@ -20,115 +29,113 @@ interface Post {
 
 interface PostPagination {
   next_page: string;
-  posts: Post[];
+  results: Post[];
 }
 
 interface HomeProps {
   postsPagination: PostPagination;
 }
 
- export default function Home({posts}: PostPagination) {
-    return (
-      <>
-       <Head>
-        <title>Inicio | Dev Blog</title>
+export default function Home({ postsPagination }: HomeProps) {
+  const [posts, setPosts] = useState<Post[]>(postsPagination.results);
+
+  async function getMorePosts() {
+    await fetch(postsPagination.next_page)
+      .then(data => data.json())
+      .then(response => {
+        const postsResponse = response.results.map(post => {
+          return {
+            uid: post.uid,
+            data: {
+              title: post.data.title,
+              subtitle: post.data.subtitle,
+              author: post.data.author,
+            },
+            first_publication_date: post.first_publication_date,
+          };
+        });
+        setPosts([...postsResponse, ...posts]);
+      });
+  }
+
+  return (
+    <>
+      <Head>
+        <title>Posts | ig.news</title>
       </Head>
 
       <main className={styles.container}>
-            <div className={styles.posts}>
-                  <Link  href='/'>
-                    <a>
-                      <strong>Desenvolvendo uma web acessível</strong>
-                      <p>Protocolos e diretrizes orientam o desenvolvimento de tecnologias acessíveis, mas é preciso olhar para além de tudo isso</p>
-                      <div className={styles.infoContainer}>
-                      <div>
-                            <FiCalendar />
-                            <time>
-                              12/23/1212
-                            </time>
-                          </div>
-                          <div>
-                            <FiUser />
-                            <span>Leonardo Borges</span>
-                          </div>
-                      </div>
-                    </a>
-                  </Link>
-
-                  <Link  href='/'>
-                    <a>
-                      <strong>Desenvolvendo uma web acessível</strong>
-                      <p>Protocolos e diretrizes orientam o desenvolvimento de tecnologias acessíveis, mas é preciso olhar para além de tudo isso</p>
-                      <div className={styles.infoContainer}>
-                      <div>
-                            <FiCalendar />
-                            <time>
-                              12/23/1212
-                            </time>
-                          </div>
-                          <div>
-                            <FiUser />
-                            <span>Leonardo Borges</span>
-                          </div>
-                      </div>
-                    </a>
-                  </Link>
-
-                  <Link  href='/'>
-                    <a>
-                      <strong>Titulo</strong>
-                      <p>subtitle</p>
-                      <div className={styles.infoContainer}>
-                      <div>
-                            <FiCalendar />
-                            <time>
-                              12/23/1212
-                            </time>
-                          </div>
-                          <div>
-                            <FiUser />
-                            <span>Leonardo Borges</span>
-                          </div>
-                      </div>
-                    </a>
-                  </Link>
-            </div>
+        <div className={styles.posts}>
+          {posts.map(post => (
+            <Link key={post.uid} href={`/post/${post.uid}`}>
+              <a>
+                <strong>{post.data.title}</strong>
+                <p>{post.data.subtitle}</p>
+                <div className={styles.infoContainer}>
+                  <div>
+                    <FiCalendar />
+                    <time>
+                      {format(
+                        new Date(post.first_publication_date),
+                        'dd MMM yyyy',
+                        {
+                          locale: ptBR,
+                        }
+                      )}
+                    </time>
+                  </div>
+                  <div>
+                    <FiUser />
+                    <span>{post.data.author}</span>
+                  </div>
+                </div>
+              </a>
+            </Link>
+          ))}
+        </div>
+        {postsPagination.next_page && (
+          <button
+            onClick={getMorePosts}
+            type="button"
+            className={styles.button}
+          >
+            Carregar mais posts
+          </button>
+        )}
       </main>
-      </>
-    )
- }
+    </>
+  );
+}
 
+export const getStaticProps: GetStaticProps = async () => {
+  const prismic = getPrismicClient();
+  const response = await prismic.query(
+    [Prismic.Predicates.at('document.type', 'postt')],
+    {
+      fetch: ['post.title', 'post.content'],
+      pageSize: 20,
+    }
+  );
 
- export const getStaticProps: GetStaticProps = async () => {
+  const posts = response.results.map(post => {
+    return {
+      uid: post.uid,
+      data: {
+        title: post.data.title,
+        subtitle: post.data.subtitle,
+        author: post.data.author,
+      },
+      first_publication_date: post.first_publication_date,
+    };
+  });
 
-const prismic = getPrismicClient();
-
-const postsResponse = await prismic.query([
-  Prismic.predicates.at('document.type', 'postt')
-], {
-  fetch: ['post.title', 'post.content'],
-  pageSize: 20,
-})
-
-const posts = postsResponse.results.map(post => {
   return {
-    uid: post.uid,
-    data: {
-      title: post.data.title,
-      subtitle: post.data.subtitle,
-      author: post.data.author,
+    props: {
+      postsPagination: {
+        next_page: response.next_page,
+        results: posts,
+      },
     },
-    first_publication_date: post.first_publication_date,
+    revalidate: 60 * 60 * 24, // 24 hours
   };
-});
-
-return {
-  props: {
-    postsPagination: {
-      next_page: postsResponse.next_page,
-      results: posts,
-    },
-  },
-  revalidate: 60 * 60 * 24, // 24 hours
-};
 };
